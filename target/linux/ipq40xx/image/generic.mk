@@ -759,6 +759,26 @@ define Device/qxwlan_e2600ac-c2
 endef
 TARGET_DEVICES += qxwlan_e2600ac-c2
 
+define Device/tplink_deco-m5-euv2
+        $(call Device/FitImage)
+        $(call Device/UbiFit)
+        $(call Device/tplink-4mlzma)
+        DEVICE_MODEL := Deco-M5
+        DEVICE_VARIANT := EU/V2
+#       DEVICE_DTS := qcom-ipq4019-ap.dk04.1-c1
+        TPLINK_HWID := 0xFFFFFFFF
+        TPLINK_FLASHLAYOUT := 16Mlzma
+#       IMAGE_SIZE := 16192k
+        SOC := qcom-ipq4019
+        KERNEL_SIZE := 4048k
+        BLOCKSIZE := 128k
+        PAGESIZE := 2048
+        IMAGES += M5v1_tp_recovery.bin
+        IMAGE/factory-us.bin := tplink-v1-image factory -C FR
+        DEVICE_PACKAGES := ipq-wifi-tplink_deco-m5-euv2 kmod-usb-acm kmod-usb-net kmod-usb-net-cdc-qmi uqmi uboot-envtools
+endef
+TARGET_DEVICES += tplink_deco-m5-euv2
+
 define Device/unielec_u4019-32m
 	$(call Device/FitImage)
 	DEVICE_VENDOR := Unielec

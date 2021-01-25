@@ -1,0 +1,341 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/*
+ * Device Tree Source for Meraki MR33 (Stinkbug)
+ *
+ * Copyright (C) 2017 Chris Blake <chrisrblake93@gmail.com>
+ * Copyright (C) 2017 Christian Lamparter <chunkeey@googlemail.com>
+ *
+ * Based on Cisco Meraki DTS from GPL release r25-linux-3.14-20170427
+ *
+ * This file is licensed under the terms of the GNU General Public
+ * License version 2.  This program is licensed "as is" without
+ * any warranty of any kind, whether express or implied.
+ */
+
+#include "qcom-ipq4019.dtsi"
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/soc/qcom,tcsr.h>
+
+/ {
+	model = "TP-Link Deco M5 EU/V2";
+	compatible = "tplink,deco-m5-euv2";
+
+	aliases {
+		led-boot = &status_green;
+		led-failsafe = &status_red;
+		led-running = &status_green;
+		led-upgrade = &power_orange;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		power_orange: power {
+			label = "orange:power";
+			gpios = <&tlmm 49 GPIO_ACTIVE_LOW>;
+			panic-indicator;
+		};
+	};
+};
+
+&blsp_dma {
+	status = "okay";
+};
+
+&blsp1_uart1 {
+	pinctrl-0 = <&serial_0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&cryptobam {
+	status = "okay";
+};
+
+&gmac0 {
+	qcom,phy_mdio_addr = <1>;
+	qcom,poll_required = <1>;
+	vlan_tag = <0 0x20>;
+};
+
+&blsp1_i2c3 {
+	pinctrl-0 = <&i2c_0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+	at24@50 {
+		compatible = "atmel,24c64";
+		pagesize = <32>;
+		reg = <0x50>;
+		read-only; /* This holds our MAC & Meraki board-data */
+	};
+};
+
+&blsp1_i2c4 {
+	pinctrl-0 = <&i2c_1_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	led-controller@30 {
+		compatible = "ti,lp5561";
+		reg = <0x30>;
+		clock-mode = /bits/8 <2>;
+		enable-gpio = <&tlmm 48 GPIO_ACTIVE_HIGH>;
+
+		/* RGB led */
+		status_red: chan0 {
+			chan-name = "red:status";
+			led-cur = /bits/ 8 <0x20>;
+			max-cur = /bits/ 8 <0x60>;
+		};
+
+		status_green: chan1 {
+			chan-name = "green:status";
+			led-cur = /bits/ 8 <0x20>;
+			max-cur = /bits/ 8 <0x60>;
+		};
+
+		chan2 {
+			chan-name = "blue:status";
+			led-cur = /bits/ 8 <0x20>;
+			max-cur = /bits/ 8 <0x60>;
+		};
+
+		chan3 {
+			chan-name = "white:status";
+			led-cur = /bits/ 8 <0x20>;
+			max-cur = /bits/ 8 <0x60>;
+		};
+	};
+};
+
+
+
+&nand {
+	pinctrl-0 = <&nand_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	nand@0 {
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "0:SBL1";
+				reg = <0x0 0x30000>;
+				read-only;
+			};
+
+			partition@30000 {
+				label = "0:BOOTCONFIG";
+				reg = <0x30000 0x10000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "0:MIBIB";
+				reg = <0x40000 0x10000>;
+				read-only;
+			};
+
+			partition@50000 {
+				label = "0:BOOTCONFIG1";
+				reg = <0x50000 0x10000>;
+				read-only;
+			};
+
+			partition@60000 {
+				label = "0:QSEE";
+				reg = <0x60000 0x60000>;
+				read-only;
+			};
+
+			partition@c0000 {
+				label = "0:CDT";
+				reg = <0xc0000 0x10000>;
+				read-only;
+			};
+
+			partition@d0000 {
+				label = "0:DDRPARAMS";
+				reg = <0xd0000 0x10000>;
+				read-only;
+			};
+
+			partition@e0000 {
+				label = "0:APPSBLENV";
+				reg = <0xe0000 0x10000>;
+				read-only;
+			};
+
+			partition@f0000 {
+				label = "0:APPSBL";
+				reg = <0xf0000 0x80000>;
+				read-only;
+			};
+
+			partition@170000 {
+				label = "0:ART";
+				reg = <0x170000 0x10000>;
+				read-only;
+			};
+
+			partition@180000 {
+				label = "OPAQUE";
+				reg = <0x180000 0x60000>;
+			};
+
+			partition@240000 {
+				label = "0:HLOS";
+				reg = <0x240000 0x300000>;
+			};
+
+			partition@540000 {
+				label = "0:rootfs";
+				reg = <0x540000 0x7d0000>;
+			};
+
+			partition@d10000 {
+				label = "0:APPSBL_1";
+				reg = <0xd10000 0x80000>;
+			};
+
+			partition@d90000 {
+				label = "1:HLOS";
+				reg = <0xd90000 0x30000>;
+			};
+			
+			partition@d110000 {
+				label = "1:rootfs";
+				reg = <0xd110000 0x7d0000>;
+			};
+		};
+	};
+};
+
+&pcie0 {
+	status = "okay";
+	perst-gpio = <&tlmm 38 GPIO_ACTIVE_LOW>;
+	wake-gpio = <&tlmm 50 GPIO_ACTIVE_LOW>;
+
+	bridge@0,0 {
+		reg = <0x00000000 0 0 0 0>;
+		#address-cells = <3>;
+		#size-cells = <2>;
+		ranges;
+
+		wifi2: wifi@1,0 {
+			compatible = "qcom,ath10k";
+			status = "okay";
+			reg = <0x00010000 0 0 0 0>;
+		};
+	};
+};
+
+&qpic_bam {
+	status = "okay";
+};
+
+&tlmm {
+	/*
+	 * GPIO43 should be 0/1 whenever the unit is
+	 * powered through PoE or AC-Adapter.
+	 * That said, playing with this seems to
+	 * reset the AP.
+	 */
+
+	mdio_pins: mdio_pinmux {
+		mux_1 {
+			pins = "gpio6";
+			function = "mdio";
+			bias-pull-up;
+		};
+		mux_2 {
+			pins = "gpio7";
+			function = "mdc";
+			bias-pull-up;
+		};
+	};
+
+	serial_0_pins: serial_pinmux {
+		mux {
+			pins = "gpio16", "gpio17";
+			function = "blsp_uart0";
+			bias-disable;
+		};
+	};
+
+	serial_1_pins: serial1_pinmux {
+		mux {
+			/* We use the i2c-0 pins for serial_1 */
+			pins = "gpio8", "gpio9";
+			function = "blsp_uart1";
+			bias-disable;
+		};
+	};
+
+	i2c_0_pins: i2c_0_pinmux {
+		pinmux {
+			function = "blsp_i2c0";
+			pins = "gpio20", "gpio21";
+		};
+		pinconf {
+			pins = "gpio20", "gpio21";
+			drive-strength = <16>;
+			bias-disable;
+		};
+	};
+
+	i2c_1_pins: i2c_1_pinmux {
+		pinmux {
+			function = "blsp_i2c1";
+			pins = "gpio34", "gpio35";
+		};
+		pinconf {
+			pins = "gpio34", "gpio35";
+			drive-strength = <16>;
+			bias-disable;
+		};
+	};
+
+	nand_pins: nand_pins {
+		/*
+		 * There are 18 pins. 15 pins are common between LCD and NAND.
+		 * The QPIC controller arbitrates between LCD and NAND. Of the
+		 * remaining 4, 2 are for NAND and 2 are for LCD exclusively.
+		 *
+		 * The meraki source hints that the bluetooth module claims
+		 * pin 52 as well. But sadly, there's no data whenever this
+		 * is a NAND or LCD exclusive pin or not.
+		 */
+
+		pullups {
+			pins = "gpio52", "gpio53", "gpio58",
+				"gpio59";
+			function = "qpic";
+			bias-pull-up;
+		};
+
+		pulldowns {
+			pins = "gpio54", "gpio55", "gpio56",
+				"gpio57", "gpio60", "gpio61",
+				"gpio62", "gpio63", "gpio64",
+				"gpio65", "gpio66", "gpio67",
+				"gpio68", "gpio69";
+			function = "qpic";
+			bias-pull-down;
+		};
+	};
+};
+
+&wifi0 {
+	status = "okay";
+	qcom,ath10k-calibration-variant = "tplink_deco-m5-euv2";
+};
+
+&wifi1 {
+	status = "okay";
+	qcom,ath10k-calibration-variant = "tplink_deco-m5-euv2";
+};
